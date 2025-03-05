@@ -1,0 +1,230 @@
+import cv2
+import json
+from datetime import datetime
+import os
+import sys
+import traceback
+from Crypto.Cipher import AES
+import base64
+
+# Encryption Key (Make sure to use the same key that was used during encryption)
+KEY = b'SixteenByteKey12'
+
+def decrypt_data(encrypted_text):
+    """Decrypt the encrypted data using AES."""
+    try:
+        encrypted_bytes = base64.b64decode(encrypted_text)  # Base64 decode
+        nonce = encrypted_bytes[:16]  # First 16 bytes are the nonce (Initialization Vector)
+        ciphertext = encrypted_bytes[16:]  # The rest is the ciphertext
+        
+        # Initialize AES cipher in EAX mode with the given nonce
+        cipher = AES.new(KEY, AES.MODE_EAX, nonce=nonce)
+        
+        # Decrypt the data
+        decrypted_text = cipher.decrypt(ciphertext).decode('utf-8')
+        return decrypted_text
+    except Exception as e:
+        print(f"Decryption Error: {e}")
+        print(f"Encrypted Text: {encrypted_text}")
+        return None
+
+
+class QRCodeScanner:
+    def __init__(self, data_file='scanned_qr_codes.json'):
+        """
+        Initialize QR Code Scanner with JSON data storage
+        """
+        # Get absolute path to ensure file is created in the right location
+        self.data_file = os.path.abspath(data_file)
+        
+        # Create file if it doesn't exist and log the path
+        try:
+            if not os.path.exists(self.data_file):
+                with open(self.data_file, 'w') as f:
+                    json.dump([], f)
+            
+            print(f"JSON file will be saved at: {self.data_file}")
+            print(f"Current working directory: {os.getcwd()}")
+        except Exception as e:
+            print(f"Error creating JSON file: {e}")
+            print(f"Full traceback: {traceback.format_exc()}")
+
+    def scan_qr_code(self):
+        """
+        Scan QR code using camera with error handling
+        """
+        try:
+            # Open camera
+            cap = cv2.VideoCapture(0)
+            
+            # Check if camera opened successfully
+            if not cap.isOpened():
+                print("Error: Could not open camera.")
+                return None
+            
+            # Create QR code detector
+            detector = cv2.QRCodeDetector()
+            
+            while True:
+                # Read frame from camera
+                ret, frame = cap.read()
+                
+                if not ret:
+                    print("Failed to grab frame")
+                    break
+                
+                # Detect and decode QR code
+                data, vertices_array, _ = detector.detectAndDecode(frame)
+                
+                # If QR code is detected
+                if len(data) > 0:
+                    # Draw rectangle around QR code
+                    vertices = vertices_array[0].astype(int)
+                    cv2.polylines(frame, [vertices], True, (0, 255, 0), 5)
+                    
+                    # Add text to frame
+                    cv2.putText(frame, f"QR Code: {data}", (10, 30), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                
+                # Display the frame
+                try:
+                    cv2.imshow('QR Code Scanner', frame)
+                except Exception as display_error:
+                    print(f"Display error: {display_error}")
+                    print("Your system might have issues with GUI rendering.")
+                
+                # Wait for key press
+                key = cv2.waitKey(1) & 0xFF
+                
+                # If QR code detected, save and exit
+                if len(data) > 0:
+                    try:
+                        decrypted_data = decrypt_data(data)  # Decrypt the data
+                        if decrypted_data:
+                            self.save_qr_code(decrypted_data)  # Save the decrypted data
+                            print(f"Scanned and Decrypted QR Code: {decrypted_data}")
+                        else:
+                            print("Failed to decrypt QR code data")
+                        break
+                    except Exception as save_error:
+                        print(f"Error processing QR code: {save_error}")
+                        print(f"Full traceback: {traceback.format_exc()}")
+                
+                # Exit if 'q' is pressed
+                if key == ord('q'):
+                    break
+            
+            # Clean up
+            cap.release()
+            cv2.destroyAllWindows()
+            
+            return decrypted_data if len(data) > 0 and decrypted_data else None
+        
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            print(f"Full traceback: {traceback.format_exc()}")
+            return None
+
+    def save_qr_code(self, data):
+        """
+        Save scanned QR code to JSON file with comprehensive error handling
+        """
+        try:
+            # Read existing data
+            try:
+                with open(self.data_file, 'r') as f:
+                    scanned_codes = json.load(f)
+            except json.JSONDecodeError:
+                print("JSON file is empty or corrupted. Creating new list.")
+                scanned_codes = []
+            except Exception as read_error:
+                print(f"Error reading JSON file: {read_error}")
+                scanned_codes = []
+            
+            # Create new entry
+            new_entry = {
+                'content': data,
+                'timestamp': datetime.now().isoformat(),
+                'id': len(scanned_codes) + 1
+            }
+            
+            # Add new entry
+            scanned_codes.append(new_entry)
+            
+            # Write back to file with error handling
+            try:
+                with open(self.data_file, 'w') as f:
+                    json.dump(scanned_codes, f, indent=4)
+                
+                print(f"QR code saved successfully to {self.data_file}!")
+                print(f"Saved Data: {new_entry}")
+            except PermissionError:
+                print(f"Permission denied when trying to write to {self.data_file}")
+            except Exception as write_error:
+                print(f"Error saving QR code: {write_error}")
+        
+        except Exception as e:
+            print(f"Unexpected error in save_qr_code: {e}")
+            print(f"Full traceback: {traceback.format_exc()}")
+
+    def get_all_scanned_codes(self):
+        """
+        Retrieve all scanned QR codes with error handling
+        """
+        try:
+            with open(self.data_file, 'r') as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            print("JSON file is empty or corrupted.")
+            return []
+        except FileNotFoundError:
+            print(f"File not found: {self.data_file}")
+            return []
+        except Exception as e:
+            print(f"Error reading scanned codes: {e}")
+            return []
+
+# Rest of the code remains the same as in the original script
+
+def main():
+    # Create scanner
+    scanner = QRCodeScanner()
+    
+    while True:
+        print("\n--- QR Code Scanner ---")
+        print("1. Scan QR Code")
+        print("2. View Scanned Codes")
+        print("3. Exit")
+        
+        try:
+            choice = input("Enter your choice (1-3): ")
+            
+            if choice == '1':
+                print("Hold QR Code in front of camera. Press 'q' to quit.")
+                result = scanner.scan_qr_code()
+                if result:
+                    print(f"Scanned and Decrypted QR Code: {result}")
+            
+            elif choice == '2':
+                scanned_codes = scanner.get_all_scanned_codes()
+                if scanned_codes:
+                    print("\n--- Scanned QR Codes ---")
+                    for code in scanned_codes:
+                        print(f"ID: {code['id']}")
+                        print(f"Content: {code['content']}")
+                        print(f"Timestamp: {code['timestamp']}")
+                        print("---")
+                else:
+                    print("No QR codes scanned yet.")
+            
+            elif choice == '3':
+                break
+            
+            else:
+                print("Invalid choice. Try again.")
+        
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+if __name__ == '__main__':
+    main()

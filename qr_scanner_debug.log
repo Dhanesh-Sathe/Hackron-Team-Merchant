@@ -1,0 +1,13 @@
+2025-03-05 17:50:38,207 - INFO: JSON file path: C:\Users\Vaibhav Vikhe Patil\OneDrive\hackthon\scanned_qr_codes.json
+2025-03-05 17:50:38,207 - INFO: Current working directory: C:\Users\Vaibhav Vikhe Patil\OneDrive\hackthon
+2025-03-05 17:50:38,208 - INFO: Created new JSON file at C:\Users\Vaibhav Vikhe Patil\OneDrive\hackthon\scanned_qr_codes.json
+2025-03-05 17:50:38,209 - INFO: Attempting to save QR code data: Test QR Code Content
+2025-03-05 17:50:38,209 - INFO: Saving to file: C:\Users\Vaibhav Vikhe Patil\OneDrive\hackthon\scanned_qr_codes.json
+2025-03-05 17:50:38,209 - INFO: QR code saved successfully to C:\Users\Vaibhav Vikhe Patil\OneDrive\hackthon\scanned_qr_codes.json
+2025-03-05 17:50:38,210 - INFO: Saved Entry: {'content': 'Test QR Code Content', 'timestamp': '2025-03-05T17:50:38.209539', 'id': 1}
+2025-03-05 17:50:58,073 - INFO: JSON file path: C:\Users\Vaibhav Vikhe Patil\OneDrive\hackthon\scanned_qr_codes.json
+2025-03-05 17:50:58,074 - INFO: Current working directory: C:\Users\Vaibhav Vikhe Patil\OneDrive\hackthon
+2025-03-05 17:50:58,074 - INFO: Attempting to save QR code data: Test QR Code Content
+2025-03-05 17:50:58,074 - INFO: Saving to file: C:\Users\Vaibhav Vikhe Patil\OneDrive\hackthon\scanned_qr_codes.json
+2025-03-05 17:50:58,075 - INFO: QR code saved successfully to C:\Users\Vaibhav Vikhe Patil\OneDrive\hackthon\scanned_qr_codes.json
+2025-03-05 17:50:58,075 - INFO: Saved Entry: {'content': 'Test QR Code Content', 'timestamp': '2025-03-05T17:50:58.075120', 'id': 2}
